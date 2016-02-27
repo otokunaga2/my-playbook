@@ -1,0 +1,46 @@
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  vars:
+    work_dir: /Users/otokunaga/work
+    repos_dir: "{{ work_dir}}/fonts"
+    branch: master
+    homebrew_cask_packages:
+      - { name: adobe-reader }
+      - { name: java }
+      - { name: skype }
+      - { name: slack }
+      - { name: kobito }
+      - { name: webstorm }
+      - { name: intellij-idea }
+      - { name: vagrant }
+      - { name: virtualbox }
+    homebrew_packages:
+      - { name: go }
+      - { name: direnv }
+      - { name: peco }
+      - { name: hub }
+      - { name: tig }
+      - { name: fish }
+
+  tasks:
+    - name: test brew install
+      homebrew: name=peco state=installed
+    - name: test brew install
+      homebrew: name=peco state=installed
+    - name: brew パッケージをインストール
+      homebrew: >
+        name={{ item.name }}
+        state={{ item.state | default('latest') }}
+        install_options={{
+          item.install_options | default() | join(',')
+          if item.install_options is not string
+          else item.install_options
+        }}
+      with_items: homebrew_packages
+      register: brew_result
+      # rictydiminishedを特定のディレクトリに移動
+    - git: repo=https://github.com/yascentur/RictyDiminished.git dest={{ repos_dir }} version={{ branch }} 
+    - name: フォントファイルをコピー
+      shell: cp -f {{repos_dir}}/Ricty*.ttf ~/Library/Fonts/
+      notify: run fc-cache
